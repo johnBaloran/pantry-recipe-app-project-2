@@ -1,6 +1,7 @@
 const apiKey = "914e2817b56c4dc48483a6c50bb886ac";
 const searchForm = document.querySelector("form");
 const listOfRecipes = document.querySelector(".search-results");
+const modalContainer = document.getElementById("modal_container");
 
 // fill out 3-5 ingredient inputs
 const ingredient1 = document.querySelector(".ingredient1");
@@ -25,7 +26,7 @@ searchForm.addEventListener("submit", (e) => {
 
 // function that gates recipes from an api based on inputted ingredients
 const findRecipes = async (a, b, c, d, e) => {
-  const baseURL = ` https://api.spoonacular.com/recipes/findByIngredients?apiKey=${apiKey}&ingredients=${a},+${b},+${c},+${d},+${e}&number=1000`;
+  const baseURL = ` https://api.spoonacular.com/recipes/findByIngredients?apiKey=${apiKey}&ingredients=${a},+${b},+${c},+${d},+${e}&number=100&ignorePantry=true&ranking=1`;
   const response = await fetch(baseURL);
   const data = await response.json();
 
@@ -59,12 +60,13 @@ const availablerecipes = (results) => {
       "Unused Ingredient(s):"
     );
 
-    const linkWebsite = document.createElement("button");
-    linkWebsite.textContent = "Click to generate recipe website";
-    linkWebsite.addEventListener("click", () => {
-      recipeWebsiteLink(result.id, recipe);
+    const buttonlinkWebsite = document.createElement("button");
+    buttonlinkWebsite.textContent = "Click to generate recipe website";
+    buttonlinkWebsite.addEventListener("click", () => {
+      // recipeWebsiteLink(result.id, recipe);
+      modalContainer.classList.add("show");
     });
-    recipe.append(linkWebsite);
+    recipe.append(buttonlinkWebsite);
     listOfRecipes.appendChild(recipe);
   });
 };
@@ -84,7 +86,7 @@ function missingOrUnusedIngredients(data, div, listTitle) {
 }
 
 const recipeWebsiteLink = async (result, div) => {
-  const baseURL = `https://api.spoonacular.com/recipes/${result}/information?apiKey=${apiKey}`;
+  const baseURL = `https://api.spoonacular.com/recipes/${result}/information?apiKey=${apiKey}&includeNutrition=true`;
   const response = await fetch(baseURL);
   const data = await response.json();
   console.log(data);
@@ -93,4 +95,8 @@ const recipeWebsiteLink = async (result, div) => {
   anchor.href = data.sourceUrl;
   anchor.target = "_blank";
   div.appendChild(anchor);
+};
+
+const displayModalRecipeInformation = (recipeInfo) => {
+  // modalContainer.classList.add("show");
 };
