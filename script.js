@@ -13,6 +13,7 @@ const ingredient5 = document.querySelector(".ingredient5");
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
+  // use ingredients input.value to fetch api
   findRecipes(
     ingredient1.value,
     ingredient2.value,
@@ -21,35 +22,75 @@ searchForm.addEventListener("submit", (e) => {
     ingredient5.value
   );
 });
-// use value to fetch api
+
+// function that gates recipes from an api based on inputted ingredients
 const findRecipes = async (a, b, c, d, e) => {
   const baseURL = ` https://api.spoonacular.com/recipes/findByIngredients?apiKey=${apiKey}&ingredients=${a},+${b},+${c},+${d},+${e}&number=1000`;
   const response = await fetch(baseURL);
   const data = await response.json();
 
+  // data received from api is filtered to only have 2 or less missing ingredients
   const results = data.filter((n) => {
     return n.missedIngredientCount <= 2;
   });
   console.log(results);
 
+  // filtered data plugged in a function that renders a collection of divs that has information on each recipe
   availablerecipes(results);
 };
-//render results in the dom
+// a function that uses data from the api to make a div that has information on available recipes
 const availablerecipes = (results) => {
   results.forEach((result) => {
     const recipe = document.createElement("div");
-    // add a link to recipe website in each recipe with an image
-    recipeWebsiteLink(result, recipe);
+    recipe.innerHTML = `<div>
+  <h2>${result.title}</h2>
+  <div>
+    <img src="${result.image}" alt="${result.title}" />
+  </div>
+</div>`;
+    missingOrUnusedIngredients(
+      result.missedIngredients,
+      recipe,
+      "Missing Ingredient(s):"
+    );
+    missingOrUnusedIngredients(
+      result.unusedIngredients,
+      recipe,
+      "Unused Ingredient(s):"
+    );
+
+    const linkWebsite = document.createElement("button");
+    linkWebsite.textContent = "Click to generate recipe website";
+    linkWebsite.addEventListener("click", () => {
+      recipeWebsiteLink(result.id, recipe);
+    });
+    recipe.append(linkWebsite);
     listOfRecipes.appendChild(recipe);
   });
 };
 
-const recipeWebsiteLink = async (result, dish) => {
-  const baseURL = `https://api.spoonacular.com/recipes/${result.id}/information?apiKey=${apiKey}`;
+function missingOrUnusedIngredients(data, div, listTitle) {
+  const ingredients = data.map((ingredient) => {
+    return ingredient.name;
+  });
+  const title = document.createElement("h4");
+  title.textContent = listTitle;
+  div.appendChild(title);
+  ingredients.forEach((ingredient) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = ingredient;
+    div.appendChild(listItem);
+  });
+}
+
+const recipeWebsiteLink = async (result, div) => {
+  const baseURL = `https://api.spoonacular.com/recipes/${result}/information?apiKey=${apiKey}`;
   const response = await fetch(baseURL);
   const data = await response.json();
   console.log(data);
-  dish.innerHTML = `<div>
-  <a href=${data.sourceUrl} target="_blank"> <img src="${result.image}" alt="${result.title}"></a>
-</div>`;
+  const anchor = document.createElement("a");
+  anchor.textContent = data.sourceUrl;
+  anchor.href = data.sourceUrl;
+  anchor.target = "_blank";
+  div.appendChild(anchor);
 };
