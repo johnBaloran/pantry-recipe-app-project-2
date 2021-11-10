@@ -26,7 +26,7 @@ searchForm.addEventListener("submit", (e) => {
 
 // function that gates recipes from an api based on inputted ingredients
 const findRecipes = async (a, b, c, d, e) => {
-  const baseURL = ` https://api.spoonacular.com/recipes/findByIngredients?apiKey=${apiKey}&ingredients=${a},+${b},+${c},+${d},+${e}&number=100&ignorePantry=true&ranking=1`;
+  const baseURL = ` https://api.spoonacular.com/recipes/findByIngredients?apiKey=${apiKey}&ingredients=${a},+${b},+${c},+${d},+${e}&number=10000&ignorePantry=true&ranking=1`;
   const response = await fetch(baseURL);
   const data = await response.json();
 
@@ -41,6 +41,7 @@ const findRecipes = async (a, b, c, d, e) => {
 };
 // a function that uses data from the api to make a div that has information on available recipes
 const availablerecipes = (results) => {
+  listOfRecipes.innerHTML = "";
   results.forEach((result) => {
     const recipe = document.createElement("div");
     recipe.innerHTML = `<div>
@@ -49,21 +50,26 @@ const availablerecipes = (results) => {
     <img src="${result.image}" alt="${result.title}" />
   </div>
 </div>`;
-    missingOrUnusedIngredients(
-      result.missedIngredients,
+    missingUsedOrUnusedIngredients(
+      result.usedIngredients,
       recipe,
-      "Missing Ingredient(s):"
+      "Used Ingredient(s):"
     );
-    missingOrUnusedIngredients(
+    missingUsedOrUnusedIngredients(
       result.unusedIngredients,
       recipe,
       "Unused Ingredient(s):"
+    );
+    missingUsedOrUnusedIngredients(
+      result.missedIngredients,
+      recipe,
+      "Missing Ingredient(s):"
     );
 
     const buttonlinkWebsite = document.createElement("button");
     buttonlinkWebsite.textContent = "Click to generate recipe website";
     buttonlinkWebsite.addEventListener("click", () => {
-      // recipeWebsiteLink(result.id, recipe);
+      recipeWebsiteLink(result.id);
       modalContainer.classList.add("show");
     });
     recipe.append(buttonlinkWebsite);
@@ -71,7 +77,7 @@ const availablerecipes = (results) => {
   });
 };
 
-function missingOrUnusedIngredients(data, div, listTitle) {
+function missingUsedOrUnusedIngredients(data, div, listTitle) {
   const ingredients = data.map((ingredient) => {
     return ingredient.name;
   });
@@ -85,18 +91,49 @@ function missingOrUnusedIngredients(data, div, listTitle) {
   });
 }
 
-const recipeWebsiteLink = async (result, div) => {
+const recipeWebsiteLink = async (result) => {
   const baseURL = `https://api.spoonacular.com/recipes/${result}/information?apiKey=${apiKey}&includeNutrition=true`;
   const response = await fetch(baseURL);
   const data = await response.json();
   console.log(data);
-  const anchor = document.createElement("a");
-  anchor.textContent = data.sourceUrl;
-  anchor.href = data.sourceUrl;
-  anchor.target = "_blank";
-  div.appendChild(anchor);
+  displayModalRecipeInformation(data);
 };
 
 const displayModalRecipeInformation = (recipeInfo) => {
-  // modalContainer.classList.add("show");
+  modalContainer.classList.add("show");
+  const modalInfo = document.getElementById("modal");
+  modalInfo.innerHTML = "";
+
+  const closeModalButton = document.createElement("button");
+  closeModalButton.innerHTML = `<i class="fas fa-times fa-3x"></i>`;
+  closeModalButton.classList.add("closeButton");
+  closeModalButton.addEventListener("click", closeModal);
+
+  const recipeTitle = document.createElement("h3");
+  recipeTitle.textContent = recipeInfo.title;
+
+  const recipeOtherInfos = document.createElement("div");
+  recipeOtherInfos.classList.add("recipeInfos");
+  recipeOtherInfos.innerHTML = `
+  <p>Ready in <span>${recipeInfo.readyInMinutes}</span> minutes</p>
+  <p><span>${recipeInfo.servings}</span> servings</p>
+ <a href="${recipeInfo.sourceUrl}" target="_blank">Recipe Website</a>`;
+
+  const instructions = recipeInfo.analyzedInstructions[0].steps;
+  const recipeSteps = document.createElement("ol");
+  console.log(instructions);
+
+  instructions.forEach((step) => {
+    const recipeStep = document.createElement("li");
+    recipeStep.textContent = step.step;
+    recipeSteps.appendChild(recipeStep);
+  });
+  modalInfo.appendChild(closeModalButton);
+  modalInfo.appendChild(recipeTitle);
+  modalInfo.appendChild(recipeSteps);
+  modalInfo.appendChild(recipeOtherInfos);
 };
+
+function closeModal() {
+  modalContainer.classList.remove("show");
+}
